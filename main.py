@@ -27,25 +27,11 @@ def afficher_consommation(claude):
     print(texte)
 
 
-def analyser_eleve(eleve):
-    """Calcule les indicateurs de la charte pour un élève."""
-    nb_baisses = regles.matieres_en_baisse(eleve["matieres"])
-    surveiller, motif = regles.a_surveiller(eleve["absences"], nb_baisses)
-    moyennes = [m["moyenne"] for m in eleve["matieres"]]
-    return {
-        "nb_baisses": nb_baisses,
-        "surveiller": surveiller,
-        "motif": motif,
-        "progression": regles.forte_progression(eleve["moyenne_precedente"], eleve["moyenne"]),
-        "sans_difficulte": regles.sans_difficulte(moyennes, eleve["absences"]),
-    }
-
-
 def afficher_analyse(dossier):
     eleves = donnees.charger_classe(dossier)
     print(f"{'Matricule':<9} {'Nom':<10} {'Prénom':<8} {'Moy.':>5} {'Abs.':>4} {'Baisses':>7}  Indicateurs")
     for eleve in eleves:
-        a = analyser_eleve(eleve)
+        a = regles.analyser_eleve(eleve)
         indicateurs = []
         if a["surveiller"]:
             indicateurs.append(f"À SURVEILLER ({a['motif']})")
@@ -83,15 +69,31 @@ def afficher_apercu(eleves):
     afficher_consommation(claude)
 
 
-def lancer_validation(eleves):
-    """Propose, fait valider élève par élève, et enregistre les CSV après chaque validation."""
+def valider_synthese_classe(claude, eleves, appreciations, charte, dossier_classe):
+    """Propose la synthèse de la classe, la fait valider et l'enregistre."""
+    classe = eleves[0]["classe"]
+    stats = regles.statistiques_classe(eleves)
+    textes = [a["appreciation_generale"] for a in appreciations]
+
+    def proposer():
+        return agent.proposer_synthese(claude, classe, stats, textes, charte)
+
+    synthese = validation.valider_synthese(classe, proposer(), regenerer=proposer)
+    sorties.ecrire_synthese(dossier_classe, classe, synthese)
+
+
+def lancer_validation(eleves, avec_synthese):
+    """Propose, fait valider élève par élève, et enregistre les CSV après chaque validation.
+
+    La synthèse de classe est proposée à la fin, seulement si la classe entière est traitée.
+    """
     charte = donnees.charger_charte(CHARTE)
     claude = agent.AgentClaude()
     dossier_classe = DOSSIER_SORTIES / eleves[0]["classe"]
     appreciations, a_surveiller, ecartes = [], [], []
     try:
         for eleve in eleves:
-            motif = analyser_eleve(eleve)["motif"]
+            motif = regles.analyser_eleve(eleve)["motif"]
             proposition = agent.proposer_appreciation(claude, eleve, charte)
             texte, commentaires = validation.valider_appreciation(
                 eleve, motif, proposition,
@@ -106,9 +108,31 @@ def lancer_validation(eleves):
                 for c in commentaires
             ]
             sorties.ecrire_sorties(dossier_classe, appreciations, a_surveiller, ecartes)
+        if avec_synthese:
+            valider_synthese_classe(claude, eleves, appreciations, charte, dossier_classe)
     except (KeyboardInterrupt, EOFError):
-        print("\nInterrompu : les élèves déjà validés sont enregistrés.")
+        print("\nInterrompu : ce qui est déjà validé est enregistré.")
     print(f"\n{len(appreciations)} appréciation(s) validée(s), {len(a_surveiller)} élève(s) à surveiller.")
+    print(f"Fichiers dans {dossier_classe}")
+    afficher_consommation(claude)
+
+
+def lancer_synthese(dossier):
+    """Refait seulement la synthèse, à partir des appréciations déjà validées."""
+    eleves = donnees.charger_classe(dossier)
+    charte = donnees.charger_charte(CHARTE)
+    dossier_classe = DOSSIER_SORTIES / eleves[0]["classe"]
+    appreciations = sorties.lire_appreciations(dossier_classe)
+    if len(appreciations) != len(eleves):
+        raise RuntimeError(
+            f"synthèse impossible : {len(appreciations)} appréciation(s) validée(s) sur {len(eleves)}. "
+            "Terminez d'abord la validation de la classe."
+        )
+    claude = agent.AgentClaude()
+    try:
+        valider_synthese_classe(claude, eleves, appreciations, charte, dossier_classe)
+    except (KeyboardInterrupt, EOFError):
+        print("\nInterrompu : la synthèse n'est pas enregistrée.")
     print(f"Fichiers dans {dossier_classe}")
     afficher_consommation(claude)
 
@@ -119,16 +143,17 @@ def quitter_avec_erreur(message):
 
 
 def main():
-    sys.stdout.reconfigure(encoding="utf-8")
-    sys.stdin.reconfigure(encoding="utf-8")
+    for flux in (sys.stdout, sys.stderr, sys.stdin):
+        flux.reconfigure(encoding="utf-8")
     load_dotenv()
     parser = argparse.ArgumentParser(description="Agent conseil de classe")
     parser.add_argument("dossier", nargs="?", help="dossier de la classe (eleves*.csv et appreciations*.csv)")
     parser.add_argument("--modeles", action="store_true", help="liste les modèles Claude disponibles")
     parser.add_argument("--analyse", action="store_true", help="affiche les indicateurs de la charte sans appeler le modèle")
     parser.add_argument("--apercu", action="store_true", help="affiche les propositions sans validation ni fichiers")
-    parser.add_argument("--limite", type=int, help="se limite aux N premiers élèves")
-    parser.add_argument("--eleve", help="se limite à un matricule")
+    parser.add_argument("--synthese", action="store_true", help="refait seulement la synthèse de classe")
+    parser.add_argument("--limite", type=int, help="se limite aux N premiers élèves (sans synthèse de classe)")
+    parser.add_argument("--eleve", help="se limite à un matricule (sans synthèse de classe)")
     args = parser.parse_args()
 
     try:
@@ -138,8 +163,11 @@ def main():
             afficher_analyse(args.dossier)
         elif args.dossier and args.apercu:
             afficher_apercu(choisir_eleves(args.dossier, args.limite, args.eleve))
+        elif args.dossier and args.synthese:
+            lancer_synthese(args.dossier)
         elif args.dossier:
-            lancer_validation(choisir_eleves(args.dossier, args.limite, args.eleve))
+            eleves = choisir_eleves(args.dossier, args.limite, args.eleve)
+            lancer_validation(eleves, avec_synthese=not (args.limite or args.eleve))
         else:
             parser.print_help()
     except donnees.DonneesInvalides as erreur:
@@ -147,7 +175,7 @@ def main():
     except anthropic.AuthenticationError:
         quitter_avec_erreur("CLAUDE_API_KEY est refusée par l'API : vérifiez la clé dans .env.")
     except anthropic.RateLimitError:
-        quitter_avec_erreur("limite de débit atteinte. Les élèves déjà validés sont enregistrés, réessayez plus tard.")
+        quitter_avec_erreur("limite de débit atteinte. Ce qui est validé est enregistré, réessayez plus tard.")
     except (anthropic.APIError, RuntimeError) as erreur:
         quitter_avec_erreur(erreur)
 

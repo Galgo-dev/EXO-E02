@@ -78,3 +78,53 @@ def test_verifier_charte_absences_seulement_si_seuil_atteint():
     texte = "Douze demi-journées d'absence."
     assert regles.verifier_charte(texte, absences_signalees=True) == []
     assert len(regles.verifier_charte(texte, absences_signalees=False)) == 1
+
+
+def eleve(precedente, actuelle, absences, matieres):
+    return {
+        "moyenne_precedente": precedente, "moyenne": actuelle, "absences": absences,
+        "matieres": [{"matiere": nom, "moyenne_precedente": p, "moyenne": a} for nom, p, a in matieres],
+    }
+
+
+ELEVES = [
+    eleve(10.0, 13.0, 0, [("Maths", 10.0, 13.0), ("Français", 10.0, 13.0)]),   # forte progression
+    eleve(14.0, 12.5, 14, [("Maths", 14.0, 12.0), ("Français", 14.0, 13.0)]),  # absences nombreuses
+]
+
+
+def test_analyser_eleve_indicateurs():
+    progression, absent = (regles.analyser_eleve(e) for e in ELEVES)
+    assert progression["progression"] and not progression["surveiller"]
+    assert absent["absences_nombreuses"] and absent["motif"] == "absences"
+    assert absent["nb_baisses"] == 2 and not absent["baisse_generalisee"]
+
+
+def test_analyser_eleve_baisse_generalisee():
+    matieres = [(f"M{n}", 14.0, 12.0) for n in range(5)]
+    analyse = regles.analyser_eleve(eleve(14.0, 12.0, 0, matieres))
+    assert analyse["baisse_generalisee"] and analyse["motif"] == "baisse des notes"
+
+
+def test_statistiques_classe():
+    stats = regles.statistiques_classe(ELEVES)
+    assert stats["effectif"] == 2
+    assert stats["moyenne_precedente"] == 12.0
+    assert stats["moyenne"] == 12.75
+    assert (stats["nb_forte_progression"], stats["nb_absences_nombreuses"], stats["nb_a_surveiller"]) == (1, 1, 1)
+    assert stats["matieres"]["Maths"] == {"moyenne_precedente": 12.0, "moyenne": 12.5}
+
+
+def test_verifier_synthese_dix_lignes_au_plus():
+    dix = "\n".join(f"Ligne {n}." for n in range(10))
+    assert regles.verifier_synthese(dix) == []
+    assert "11 lignes" in regles.verifier_synthese(dix + "\nOnzième.")[0]
+
+
+def test_verifier_synthese_ignore_les_lignes_vides():
+    assert regles.verifier_synthese("Une idée.\n\n\nUne autre idée.\n") == []
+
+
+def test_verifier_synthese_vide_et_formulation_interdite():
+    assert regles.verifier_synthese("  \n") == ["synthèse vide"]
+    assert "formulation interdite" in regles.verifier_synthese("Sans doute un bon trimestre.")[0]

@@ -27,3 +27,9 @@ def test_definitions_pour_l_api():
     definitions = outils_module.definitions(creer_outils(ELEVE, "charte"))
     assert {d["name"] for d in definitions} == {"lire_charte", "absences_graves", "matieres_en_baisse", "a_surveiller"}
     assert all(d["description"] and d["input_schema"]["type"] == "object" for d in definitions)
+
+
+def test_outils_de_classe_se_limitent_a_la_charte():
+    outils = outils_module.creer_outils_classe("texte de la charte")
+    assert list(outils) == ["lire_charte"]
+    assert outils["lire_charte"]() == "texte de la charte"

@@ -1,13 +1,19 @@
-"""Outils mis à disposition de l'agent : lecture seule, liés à l'élève en cours."""
+"""Outils mis à disposition de l'agent : lecture seule."""
 from conseil import regles
 
 
-def creer_outils(eleve, charte):
-    """Crée les outils d'un élève. Sans argument, le modèle ne peut pas inventer de chiffres."""
+def creer_outils_classe(charte):
+    """Outils de la synthèse de classe : seulement la lecture de la charte."""
 
     def lire_charte() -> str:
         """Renvoie le texte complet de la charte de rédaction de l'établissement."""
         return charte
+
+    return {"lire_charte": lire_charte}
+
+
+def creer_outils(eleve, charte):
+    """Crée les outils d'un élève. Sans argument, le modèle ne peut pas inventer de chiffres."""
 
     def absences_graves() -> bool:
         """Indique si le nombre de demi-journées d'absence de l'élève atteint le seuil de signalement de la charte."""
@@ -24,8 +30,8 @@ def creer_outils(eleve, charte):
         )
         return {"a_surveiller": surveiller, "motif": motif}
 
-    outils = (lire_charte, absences_graves, matieres_en_baisse, a_surveiller)
-    return {outil.__name__: outil for outil in outils}
+    outils = (absences_graves, matieres_en_baisse, a_surveiller)
+    return {**creer_outils_classe(charte), **{outil.__name__: outil for outil in outils}}
 
 
 def definitions(outils):

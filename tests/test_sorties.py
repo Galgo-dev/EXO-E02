@@ -34,3 +34,19 @@ def test_ecrire_sorties_protege_les_virgules(tmp_path):
     texte = "Résultats corrects, à consolider."
     sorties.ecrire_sorties(tmp_path, [{**IDENTITE, "appreciation_generale": texte}], [], [])
     assert lire(tmp_path / "appreciations.csv")[0]["appreciation_generale"] == texte
+
+
+def test_lire_appreciations_relit_ce_qui_a_ete_ecrit(tmp_path):
+    appreciation = {**IDENTITE, "appreciation_generale": "Texte validé."}
+    sorties.ecrire_sorties(tmp_path, [appreciation], [], [])
+    assert sorties.lire_appreciations(tmp_path) == [appreciation]
+
+
+def test_lire_appreciations_sans_fichier(tmp_path):
+    assert sorties.lire_appreciations(tmp_path) == []
+
+
+def test_ecrire_synthese_en_markdown(tmp_path):
+    sorties.ecrire_synthese(tmp_path / "1re 2", "1re 2", "Classe en progrès.\n")
+    contenu = (tmp_path / "1re 2" / "synthese.md").read_text(encoding="utf-8")
+    assert contenu == "# Synthèse de la classe 1re 2\n\nClasse en progrès.\n"
