@@ -26,3 +26,15 @@ def creer_outils(eleve, charte):
 
     outils = (lire_charte, absences_graves, matieres_en_baisse, a_surveiller)
     return {outil.__name__: outil for outil in outils}
+
+
+def definitions(outils):
+    """Déclaration des outils pour l'API : nom, description (docstring), aucun argument."""
+    return [
+        {
+            "name": nom,
+            "description": outil.__doc__,
+            "input_schema": {"type": "object", "properties": {}},
+        }
+        for nom, outil in outils.items()
+    ]

@@ -2,6 +2,7 @@
 
 Agent local qui propose des appréciations générales à partir des exports CSV et de la charte de rédaction.
 Le principal valide chaque proposition. Voir `ressource/` pour les données et la charte.
+L'agent utilise l'API Claude (Anthropic).
 
 ## Installation
 
@@ -12,22 +13,30 @@ Le principal valide chaque proposition. Voir `ressource/` pour les données et l
 Créer un fichier `.env` à la racine :
 
 ```
-GEMINI_API_KEY=...
-GEMINI_MODEL=...   # optionnel
+CLAUDE_API_KEY=...
+CLAUDE_MODEL=...   # optionnel, claude-haiku-5-5 par défaut
 ```
 
-## Vérifier la clé et les modèles
-
-```
-.venv\Scripts\python main.py --modeles
-```
+Modèles connus pour l'estimation du coût : `claude-opus-5-5`, `claude-sonnet-5-5`, `claude-haiku-5-5`.
 
 ## Commandes
 
 ```
-.venv\Scripts\python main.py ressource\classe_1 --analyse           # indicateurs de la charte, sans modèle
-.venv\Scripts\python main.py ressource\classe_1 --limite 2          # propositions pour les 2 premiers élèves
-.venv\Scripts\python main.py ressource\classe_1 --limite 1 --eleve 1R2-010
+.venv\Scripts\python main.py --modeles                                   # liste les modèles (sans coût)
+.venv\Scripts\python main.py ressource\classe_1 --analyse                 # indicateurs de la charte, sans modèle
+.venv\Scripts\python main.py ressource\classe_1 --apercu --limite 1       # une proposition, sans validation
+.venv\Scripts\python main.py ressource\classe_1                           # validation élève par élève
 ```
 
-Le modèle par défaut est `gemini-3.6-flash` ; `GEMINI_MODEL` dans `.env` le remplace.
+Pendant la validation : Entrée valide, `m` remplace le texte, `r` régénère la proposition.
+Les fichiers sont écrits dans `sorties\<classe>\` après chaque élève validé :
+`appreciations.csv`, `a_surveiller.csv`, `commentaires_ecartes.csv`.
+La consommation de jetons et le coût estimé sont affichés en fin de session.
+
+## Tests
+
+```
+.venv\Scripts\python -m pytest -q
+```
+
+Les tests n'appellent jamais l'API : l'agent est testé avec un faux client.

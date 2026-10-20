@@ -1,26 +1,30 @@
 """Point d'entrée de l'agent conseil de classe."""
 import argparse
-import os
 import sys
-
 from pathlib import Path
 
+import anthropic
 from dotenv import load_dotenv
-from google.genai import errors
 
-from conseil import agent, donnees, regles
+from conseil import agent, donnees, regles, sorties, validation
 
 CHARTE = Path(__file__).parent / "ressource" / "charte-redaction.md"
+DOSSIER_SORTIES = Path(__file__).parent / "sorties"
 
 
 def afficher_modeles():
-    client = agent.creer_client()
-    noms = sorted(m.name.removeprefix("models/") for m in client.models.list())
-    print(f"{len(noms)} modèles disponibles. Modèles Flash :")
-    for nom in noms:
-        if "flash" in nom:
-            print(f"  {nom}")
-    print(f"GEMINI_MODEL actuel : {os.environ.get('GEMINI_MODEL', '(non défini)')}")
+    claude = agent.AgentClaude()
+    print("Modèles Claude disponibles :")
+    for modele in claude.client.models.list():
+        print(f"  {modele.id}")
+    print(f"Modèle utilisé : {claude.modele} (CLAUDE_MODEL pour le changer)")
+
+
+def afficher_consommation(claude):
+    texte = f"Consommation : {claude.jetons_entree} jetons en entrée, {claude.jetons_sortie} en sortie"
+    if claude.cout_estime is not None:
+        texte += f", environ {claude.cout_estime:.3f} $"
+    print(texte)
 
 
 def analyser_eleve(eleve):
@@ -55,15 +59,19 @@ def afficher_analyse(dossier):
         )
 
 
-def afficher_propositions(dossier, limite, matricule):
-    """Affiche les propositions de l'agent pour quelques élèves, sans validation."""
+def choisir_eleves(dossier, limite, matricule):
     eleves = donnees.charger_classe(dossier)
     if matricule:
         eleves = [e for e in eleves if e["matricule"] == matricule]
+    return eleves[:limite]
+
+
+def afficher_apercu(eleves):
+    """Affiche les propositions de l'agent sans validation."""
     charte = donnees.charger_charte(CHARTE)
-    client = agent.creer_client()
-    for eleve in eleves[:limite]:
-        proposition = agent.proposer_appreciation(client, eleve, charte)
+    claude = agent.AgentClaude()
+    for eleve in eleves:
+        proposition = agent.proposer_appreciation(claude, eleve, charte)
         texte = proposition["appreciation"]
         print(f"\n{eleve['prenom']} {eleve['nom']} ({eleve['matricule']}) - {len(texte)} caractères")
         print(texte)
@@ -71,34 +79,77 @@ def afficher_propositions(dossier, limite, matricule):
             print(f"  Commentaire écarté : {ecarte['enseignant']} ({ecarte['matiere']}) - {ecarte['raison']}")
         for alerte in proposition["alertes"]:
             print(f"  ALERTE charte : {alerte}")
+    print()
+    afficher_consommation(claude)
+
+
+def lancer_validation(eleves):
+    """Propose, fait valider élève par élève, et enregistre les CSV après chaque validation."""
+    charte = donnees.charger_charte(CHARTE)
+    claude = agent.AgentClaude()
+    dossier_classe = DOSSIER_SORTIES / eleves[0]["classe"]
+    appreciations, a_surveiller, ecartes = [], [], []
+    try:
+        for eleve in eleves:
+            motif = analyser_eleve(eleve)["motif"]
+            proposition = agent.proposer_appreciation(claude, eleve, charte)
+            texte, commentaires = validation.valider_appreciation(
+                eleve, motif, proposition,
+                regenerer=lambda e=eleve: agent.proposer_appreciation(claude, e, charte),
+            )
+            identite = {k: eleve[k] for k in ("matricule", "nom", "prenom", "classe")}
+            appreciations.append({**identite, "appreciation_generale": texte})
+            if motif:
+                a_surveiller.append({**identite, "motif": motif})
+            ecartes += [
+                {"matricule": eleve["matricule"], **{k: c[k] for k in ("matiere", "enseignant", "raison")}}
+                for c in commentaires
+            ]
+            sorties.ecrire_sorties(dossier_classe, appreciations, a_surveiller, ecartes)
+    except (KeyboardInterrupt, EOFError):
+        print("\nInterrompu : les élèves déjà validés sont enregistrés.")
+    print(f"\n{len(appreciations)} appréciation(s) validée(s), {len(a_surveiller)} élève(s) à surveiller.")
+    print(f"Fichiers dans {dossier_classe}")
+    afficher_consommation(claude)
+
+
+def quitter_avec_erreur(message):
+    print(f"Erreur : {message}", file=sys.stderr)
+    sys.exit(1)
 
 
 def main():
     sys.stdout.reconfigure(encoding="utf-8")
+    sys.stdin.reconfigure(encoding="utf-8")
     load_dotenv()
     parser = argparse.ArgumentParser(description="Agent conseil de classe")
     parser.add_argument("dossier", nargs="?", help="dossier de la classe (eleves*.csv et appreciations*.csv)")
-    parser.add_argument("--modeles", action="store_true", help="liste les modèles Gemini disponibles")
+    parser.add_argument("--modeles", action="store_true", help="liste les modèles Claude disponibles")
     parser.add_argument("--analyse", action="store_true", help="affiche les indicateurs de la charte sans appeler le modèle")
-    parser.add_argument("--limite", type=int, help="propose les appréciations des N premiers élèves")
-    parser.add_argument("--eleve", help="restreint à un matricule (avec --limite)")
+    parser.add_argument("--apercu", action="store_true", help="affiche les propositions sans validation ni fichiers")
+    parser.add_argument("--limite", type=int, help="se limite aux N premiers élèves")
+    parser.add_argument("--eleve", help="se limite à un matricule")
     args = parser.parse_args()
 
     try:
         if args.modeles:
             afficher_modeles()
-        elif args.analyse and args.dossier:
+        elif args.dossier and args.analyse:
             afficher_analyse(args.dossier)
-        elif args.limite and args.dossier:
-            afficher_propositions(args.dossier, args.limite, args.eleve)
+        elif args.dossier and args.apercu:
+            afficher_apercu(choisir_eleves(args.dossier, args.limite, args.eleve))
+        elif args.dossier:
+            lancer_validation(choisir_eleves(args.dossier, args.limite, args.eleve))
         else:
             parser.print_help()
     except donnees.DonneesInvalides as erreur:
-        print(f"Erreur : {erreur}", file=sys.stderr)
-        sys.exit(1)
-    except errors.APIError as erreur:
-        print(f"Erreur Gemini : {erreur}", file=sys.stderr)
-        sys.exit(1)
+        quitter_avec_erreur(erreur)
+    except anthropic.AuthenticationError:
+        quitter_avec_erreur("CLAUDE_API_KEY est refusée par l'API : vérifiez la clé dans .env.")
+    except anthropic.RateLimitError:
+        quitter_avec_erreur("limite de débit atteinte. Les élèves déjà validés sont enregistrés, réessayez plus tard.")
+    except (anthropic.APIError, RuntimeError) as erreur:
+        quitter_avec_erreur(erreur)
 
 
 if __name__ == "__main__":

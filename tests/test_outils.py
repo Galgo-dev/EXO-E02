@@ -1,3 +1,4 @@
+from conseil import outils as outils_module
 from conseil.outils import creer_outils
 
 ELEVE = {
@@ -20,3 +21,9 @@ def test_outils_renvoient_les_donnees_de_l_eleve():
     assert outils["absences_graves"]() is True
     assert outils["matieres_en_baisse"]() == 1
     assert outils["a_surveiller"]() == {"a_surveiller": True, "motif": "absences"}
+
+
+def test_definitions_pour_l_api():
+    definitions = outils_module.definitions(creer_outils(ELEVE, "charte"))
+    assert {d["name"] for d in definitions} == {"lire_charte", "absences_graves", "matieres_en_baisse", "a_surveiller"}
+    assert all(d["description"] and d["input_schema"]["type"] == "object" for d in definitions)
