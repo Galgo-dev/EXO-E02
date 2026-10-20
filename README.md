@@ -21,3 +21,13 @@ GEMINI_MODEL=...   # optionnel
 ```
 .venv\Scripts\python main.py --modeles
 ```
+
+## Commandes
+
+```
+.venv\Scripts\python main.py ressource\classe_1 --analyse           # indicateurs de la charte, sans modèle
+.venv\Scripts\python main.py ressource\classe_1 --limite 2          # propositions pour les 2 premiers élèves
+.venv\Scripts\python main.py ressource\classe_1 --limite 1 --eleve 1R2-010
+```
+
+Le modèle par défaut est `gemini-3.6-flash` ; `GEMINI_MODEL` dans `.env` le remplace.

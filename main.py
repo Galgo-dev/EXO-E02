@@ -3,15 +3,18 @@ import argparse
 import os
 import sys
 
-from dotenv import load_dotenv
+from pathlib import Path
 
-from conseil import donnees, regles
+from dotenv import load_dotenv
+from google.genai import errors
+
+from conseil import agent, donnees, regles
+
+CHARTE = Path(__file__).parent / "ressource" / "charte-redaction.md"
 
 
 def afficher_modeles():
-    from google import genai
-
-    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+    client = agent.creer_client()
     noms = sorted(m.name.removeprefix("models/") for m in client.models.list())
     print(f"{len(noms)} modèles disponibles. Modèles Flash :")
     for nom in noms:
@@ -52,6 +55,24 @@ def afficher_analyse(dossier):
         )
 
 
+def afficher_propositions(dossier, limite, matricule):
+    """Affiche les propositions de l'agent pour quelques élèves, sans validation."""
+    eleves = donnees.charger_classe(dossier)
+    if matricule:
+        eleves = [e for e in eleves if e["matricule"] == matricule]
+    charte = donnees.charger_charte(CHARTE)
+    client = agent.creer_client()
+    for eleve in eleves[:limite]:
+        proposition = agent.proposer_appreciation(client, eleve, charte)
+        texte = proposition["appreciation"]
+        print(f"\n{eleve['prenom']} {eleve['nom']} ({eleve['matricule']}) - {len(texte)} caractères")
+        print(texte)
+        for ecarte in proposition["commentaires_ecartes"]:
+            print(f"  Commentaire écarté : {ecarte['enseignant']} ({ecarte['matiere']}) - {ecarte['raison']}")
+        for alerte in proposition["alertes"]:
+            print(f"  ALERTE charte : {alerte}")
+
+
 def main():
     sys.stdout.reconfigure(encoding="utf-8")
     load_dotenv()
@@ -59,6 +80,8 @@ def main():
     parser.add_argument("dossier", nargs="?", help="dossier de la classe (eleves*.csv et appreciations*.csv)")
     parser.add_argument("--modeles", action="store_true", help="liste les modèles Gemini disponibles")
     parser.add_argument("--analyse", action="store_true", help="affiche les indicateurs de la charte sans appeler le modèle")
+    parser.add_argument("--limite", type=int, help="propose les appréciations des N premiers élèves")
+    parser.add_argument("--eleve", help="restreint à un matricule (avec --limite)")
     args = parser.parse_args()
 
     try:
@@ -66,10 +89,15 @@ def main():
             afficher_modeles()
         elif args.analyse and args.dossier:
             afficher_analyse(args.dossier)
+        elif args.limite and args.dossier:
+            afficher_propositions(args.dossier, args.limite, args.eleve)
         else:
             parser.print_help()
     except donnees.DonneesInvalides as erreur:
         print(f"Erreur : {erreur}", file=sys.stderr)
+        sys.exit(1)
+    except errors.APIError as erreur:
+        print(f"Erreur Gemini : {erreur}", file=sys.stderr)
         sys.exit(1)
 
 

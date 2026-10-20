@@ -8,6 +8,13 @@ SANS_DIFFICULTE_MOYENNE_MIN = 12  # moyenne minimale dans chaque matière
 SANS_DIFFICULTE_ABSENCES_MAX = 2  # demi-journées d'absence au plus
 
 
+LONGUEUR_MAX_APPRECIATION = 300   # caractères, espaces compris
+FORMULATIONS_INTERDITES = (       # section 4 de la charte
+    "élève moyen", "élève faible", "fainéant", "ne fait aucun effort",
+    "peut mieux faire", "il est évident que", "sans doute",
+)
+
+
 def moyenne_generale(moyennes):
     """Moyenne arithmétique des moyennes par matière, arrondie à 2 décimales."""
     return round(sum(moyennes) / len(moyennes), 2)
@@ -52,3 +59,17 @@ def sans_difficulte(moyennes, absences):
         all(m >= SANS_DIFFICULTE_MOYENNE_MIN for m in moyennes)
         and absences <= SANS_DIFFICULTE_ABSENCES_MAX
     )
+
+
+def verifier_charte(texte, absences_signalees):
+    """Renvoie la liste des règles de la charte non respectées par une appréciation."""
+    problemes = []
+    if len(texte) > LONGUEUR_MAX_APPRECIATION:
+        problemes.append(f"{len(texte)} caractères au lieu de {LONGUEUR_MAX_APPRECIATION} au plus")
+    minuscules = texte.lower()
+    for formule in FORMULATIONS_INTERDITES:
+        if formule in minuscules:
+            problemes.append(f"formulation interdite : « {formule} »")
+    if "absence" in minuscules and not absences_signalees:
+        problemes.append("absences mentionnées alors que le seuil de signalement n'est pas atteint")
+    return problemes
