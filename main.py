@@ -142,9 +142,7 @@ def quitter_avec_erreur(message):
     sys.exit(1)
 
 
-def main():
-    for flux in (sys.stdout, sys.stderr, sys.stdin):
-        flux.reconfigure(encoding="utf-8")
+def main(argv=None):
     load_dotenv()
     parser = argparse.ArgumentParser(description="Agent conseil de classe")
     parser.add_argument("dossier", nargs="?", help="dossier de la classe (eleves*.csv et appreciations*.csv)")
@@ -154,7 +152,7 @@ def main():
     parser.add_argument("--synthese", action="store_true", help="refait seulement la synthèse de classe")
     parser.add_argument("--limite", type=int, help="se limite aux N premiers élèves (sans synthèse de classe)")
     parser.add_argument("--eleve", help="se limite à un matricule (sans synthèse de classe)")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     try:
         if args.modeles:
@@ -181,4 +179,6 @@ def main():
 
 
 if __name__ == "__main__":
+    for flux in (sys.stdout, sys.stderr, sys.stdin):
+        flux.reconfigure(encoding="utf-8")
     main()

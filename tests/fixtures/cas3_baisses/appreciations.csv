@@ -1,0 +1,46 @@
+classe,matricule,matiere,enseignant,moyenne_trimestre_precedent,moyenne_trimestre,appreciation
+1re 2,1R2-011,Français,Mme Garnier,15.9,14.9,"Baisse sensible, à reprendre rapidement avec le professeur."
+1re 2,1R2-011,Mathématiques,M. Simon,17.2,16.2,"Baisse sensible, à reprendre rapidement avec le professeur."
+1re 2,1R2-011,Histoire-géographie,M. Roux,17.8,16.8,"Baisse sensible, à reprendre rapidement avec le professeur."
+1re 2,1R2-011,Anglais LV1,Mme Delcourt,17.7,16.7,"Baisse sensible, à reprendre rapidement avec le professeur."
+1re 2,1R2-011,Espagnol LV2,M. Alonso,17.0,16.0,"Baisse sensible, à reprendre rapidement avec le professeur."
+1re 2,1R2-011,Physique-chimie,Mme Brunet,15.3,15.6,Résultats solides et participation active en classe.
+1re 2,1R2-011,SVT,M. Weber,16.5,16.7,"Travail soigné et régulier, à poursuivre. Participation orale régulière."
+1re 2,1R2-011,EPS,Mme Kiefer,15.8,15.4,"Travail soigné et régulier, à poursuivre. Investissement régulier en séance."
+1re 2,1R2-011,SES,M. Pirard,15.8,15.8,"Très bon trimestre, travail rigoureux et autonome."
+1re 2,1R2-012,Français,Mme Garnier,15.8,14.8,"Baisse sensible, à reprendre rapidement avec le professeur."
+1re 2,1R2-012,Mathématiques,M. Simon,14.7,13.7,"Baisse sensible, à reprendre rapidement avec le professeur."
+1re 2,1R2-012,Histoire-géographie,M. Roux,15.3,14.3,"Baisse sensible, à reprendre rapidement avec le professeur."
+1re 2,1R2-012,Anglais LV1,Mme Delcourt,14.4,13.4,"Baisse sensible, à reprendre rapidement avec le professeur."
+1re 2,1R2-012,Espagnol LV2,M. Alonso,16.8,15.8,"Baisse sensible, à reprendre rapidement avec le professeur."
+1re 2,1R2-012,Physique-chimie,Mme Brunet,14.8,14.4,"Travail soigné et régulier, à poursuivre."
+1re 2,1R2-012,SVT,M. Weber,13.9,13.5,"Trimestre correct, travail globalement régulier."
+1re 2,1R2-012,EPS,Mme Kiefer,14.5,14.4,Résultats solides et participation active en classe. Investissement régulier en séance.
+1re 2,1R2-012,SES,M. Pirard,13.6,13.4,Résultats réguliers ; l'écrit doit gagner en précision.
+1re 2,1R2-013,Français,Mme Garnier,14.4,13.4,"Baisse sensible, à reprendre rapidement avec le professeur."
+1re 2,1R2-013,Mathématiques,M. Simon,16.0,15.0,"Baisse sensible, à reprendre rapidement avec le professeur."
+1re 2,1R2-013,Histoire-géographie,M. Roux,16.2,15.2,"Baisse sensible, à reprendre rapidement avec le professeur."
+1re 2,1R2-013,Anglais LV1,Mme Delcourt,16.4,15.4,"Baisse sensible, à reprendre rapidement avec le professeur."
+1re 2,1R2-013,Espagnol LV2,M. Alonso,15.4,14.4,"Baisse sensible, à reprendre rapidement avec le professeur."
+1re 2,1R2-013,Physique-chimie,Mme Brunet,13.4,13.3,Résultats réguliers ; l'écrit doit gagner en précision. Le cahier est tenu avec soin.
+1re 2,1R2-013,SVT,M. Weber,13.8,14.0,"Très bon trimestre, travail rigoureux et autonome. Les exercices à la maison sont rendus régulièrement."
+1re 2,1R2-013,EPS,Mme Kiefer,14.1,14.5,Résultats solides et participation active en classe.
+1re 2,1R2-013,SES,M. Pirard,15.1,14.7,Résultats solides et participation active en classe.
+1re 2,1R2-014,Français,Mme Garnier,17.0,16.0,"Baisse sensible, à reprendre rapidement avec le professeur."
+1re 2,1R2-014,Mathématiques,M. Simon,15.6,14.6,"Baisse sensible, à reprendre rapidement avec le professeur."
+1re 2,1R2-014,Histoire-géographie,M. Roux,16.8,15.8,"Baisse sensible, à reprendre rapidement avec le professeur."
+1re 2,1R2-014,Anglais LV1,Mme Delcourt,16.6,15.6,"Baisse sensible, à reprendre rapidement avec le professeur."
+1re 2,1R2-014,Espagnol LV2,M. Alonso,15.4,14.4,"Baisse sensible, à reprendre rapidement avec le professeur."
+1re 2,1R2-014,Physique-chimie,Mme Brunet,14.8,14.7,Résultats solides et participation active en classe. Participation orale régulière.
+1re 2,1R2-014,SVT,M. Weber,15.3,15.2,Résultats solides et participation active en classe.
+1re 2,1R2-014,EPS,Mme Kiefer,14.4,14.5,"Très bon trimestre, travail rigoureux et autonome."
+1re 2,1R2-014,SES,M. Pirard,14.5,14.8,Résultats solides et participation active en classe. Le vocabulaire est bien réinvesti à l'oral.
+1re 2,1R2-016,Français,Mme Garnier,14.8,13.8,"Baisse sensible, à reprendre rapidement avec le professeur."
+1re 2,1R2-016,Mathématiques,M. Simon,13.5,12.5,"Baisse sensible, à reprendre rapidement avec le professeur."
+1re 2,1R2-016,Histoire-géographie,M. Roux,14.4,13.4,"Baisse sensible, à reprendre rapidement avec le professeur."
+1re 2,1R2-016,Anglais LV1,Mme Delcourt,14.1,13.1,"Baisse sensible, à reprendre rapidement avec le professeur."
+1re 2,1R2-016,Espagnol LV2,M. Alonso,11.7,10.7,"Baisse sensible, à reprendre rapidement avec le professeur."
+1re 2,1R2-016,Physique-chimie,Mme Brunet,13.6,13.9,"Trimestre correct, travail globalement régulier."
+1re 2,1R2-016,SVT,M. Weber,13.2,13.3,"Trimestre correct, travail globalement régulier."
+1re 2,1R2-016,EPS,Mme Kiefer,12.7,12.4,"Participation correcte, les efforts personnels sont à poursuivre."
+1re 2,1R2-016,SES,M. Pirard,12.2,11.9,"Trimestre correct, travail globalement régulier. Trois devoirs n'ont pas été rendus."
